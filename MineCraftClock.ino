@@ -1,3 +1,4 @@
+#include <EEPROM.h>
 #include <Wire.h>
 #include "RTClib.h"
 #include <LiquidCrystal.h>
@@ -7,6 +8,10 @@
 #define set A1
 #define up A2
 #define dwn A0
+
+#define almHrADDR 512
+#define almMnADDR 513
+#define almTypeADDR 514
 
 #define rbday 7
 #define alm 8
@@ -67,10 +72,33 @@ void setup() {
   lcd.createChar(0,sun);
   lcd.createChar(1, moon);
   delay(10);
+  recallEEPROM();
   startSound();
   declarePins();
   lastSecond = RTC.now().second();
   updateTime();
+}
+
+void recallEEPROM() {
+  alarm[0] = EEPROM.read(almHrADDR);
+  alarm[1] = EEPROM.read(almMnADDR);
+  if(EEPROM.read(almTypeADDR) == 0) {
+    almType = true;
+  }
+  else {
+    almType = false;
+  }
+}
+
+void setEEPROM() {
+  EEPROM.write(almHrADDR, alarm[0]);
+  EEPROM.write(almMnADDR, alarm[1]);
+ if(almType) {
+   EEPROM.write(almTypeADDR, 0);
+ }
+  else {
+    EEPROM.write(almTypeADDR, 1);
+  }
 }
 
 void declarePins() {
@@ -179,7 +207,7 @@ void setAlarmTime() {
      lcd.print("WEEKENDS");
    delay(280);
 }
-  
+  setEEPROM();
 }
 
 void printTime(int col, int row) {
