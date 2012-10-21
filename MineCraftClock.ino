@@ -1,0 +1,332 @@
+#include <Wire.h>
+#include "RTClib.h"
+#include <LiquidCrystal.h>
+#include <SoftwareSerial.h>
+
+#define snz A3
+#define set A1
+#define up A2
+#define dwn A0
+
+#define rbday 7
+#define alm 8
+
+LiquidCrystal lcd(12,11,5,4,3,2);
+SoftwareSerial mp3(9, 10);
+RTC_DS1307 RTC;
+
+char cr = 13;
+String ext = ".mp3";
+String files[] = 
+{
+"calm1",
+"calm2",
+"calm3",
+"hal2",
+"hal1", 
+"hal3", 
+"hal4", 
+"piano3", 
+"piano2", 
+"nuance1", 
+"nuance2",
+"piano1",
+"cat"};
+
+byte moon[8] = {
+  B00001,
+  B10001,
+  B00011,
+  B00011,
+  B00111,
+  B01110,
+  B11100,
+};
+
+byte sun[8] = {
+  B00000,
+  B10101,
+  B01110,
+  B11111,
+  B11111,
+  B01110,
+  B10101
+};
+
+boolean alarming = false;
+unsigned int lastSecond;
+unsigned int alarm[] = {6,0};
+boolean almType = true;
+
+void setup() {
+  Serial.begin(9600);
+  mp3.begin(9600);
+    Wire.begin();
+  RTC.begin();
+  lcd.begin(16,2);
+  lcd.createChar(0,sun);
+  lcd.createChar(1, moon);
+  delay(10);
+  startSound();
+  declarePins();
+  lastSecond = RTC.now().second();
+  updateTime();
+}
+
+void declarePins() {
+ pinMode(snz, OUTPUT);
+ pinMode(set, OUTPUT);
+ pinMode(up, OUTPUT);
+ pinMode(dwn, OUTPUT);
+ pinMode(alm, OUTPUT);
+ pinMode(rbday, OUTPUT);
+ digitalWrite(snz, HIGH);
+ digitalWrite(set, HIGH);
+ digitalWrite(up, HIGH);
+ digitalWrite(dwn, HIGH);
+}
+
+void loop() {
+ chkInputs();
+ if(RTC.now().second()-lastSecond >= 1) {
+   lastSecond = RTC.now().second();
+   updateTime();
+ }
+ delay(100);
+}
+
+void chkInputs() {
+ if(digitalRead(snz) == LOW) {
+   if(!isPlaying()) {
+     if(checkHeld(snz, 20 )) {
+       playRandomSong();
+     }
+   }
+   else {
+    sendMp3Command("PC S"); 
+   }
+ }
+if(digitalRead(dwn) == LOW) {
+  if(checkHeld(dwn,8)) {
+    if(alarming){alarming = false;}
+    else {alarming = true;}
+  }
+}
+if(digitalRead(set) == LOW) {
+ if(checkHeld(set,12)) {
+   setAlarmTime();
+ }
+}
+}
+
+void setAlarmTime() {
+ lcd.clear();
+ lcd.setCursor(0,0);
+ lcd.print("Use up/down to");
+ lcd.setCursor(0,1);
+ lcd.print("set alarm time");
+ delay(2200);
+ lcd.clear();
+ lcd.setCursor(7,0);
+ lcd.print(alarm[0]);
+ 
+ while(digitalRead(set) != LOW) {
+   if(digitalRead(up) == LOW) {
+    if(alarm[0] < 23){ alarm[0]++;} 
+   }
+   else if(digitalRead(dwn) == LOW) {
+      if(alarm[0] > 0){alarm[0]--;} 
+   }
+   lcd.clear();
+   lcd.setCursor(5,0);
+   lcd.print("H:");
+   lcd.print(alarm[0]);
+   printTime(4,1);
+   delay(280);
+}
+ delay(750);
+  while(digitalRead(set) != LOW) {
+   if(digitalRead(up) == LOW) {
+     if(alarm[1] < 59) {alarm[1]++;}
+   }
+   else if(digitalRead(dwn) == LOW) {
+    if(alarm[1] > 0 ) {alarm[1]--;} 
+   }
+   lcd.clear();
+   lcd.setCursor(5,0);
+   lcd.print("M:");
+   lcd.print(alarm[1]);
+   printTime(4,1);
+   delay(280);
+  }
+  delay(750);
+  while(digitalRead(set) != LOW) {
+   if(digitalRead(up) == LOW) {
+    if(almType){almType = false;}
+    else if(!almType){almType = true;}
+   }
+   else if(digitalRead(dwn) == LOW) {
+      if(almType){almType = false;}
+      else if(!almType){almType = true;}
+   }
+   lcd.clear();
+   lcd.setCursor(3,0);
+   lcd.print("Alarm Type:");
+   lcd.setCursor(3,1);
+   if(almType)
+     lcd.print("WEEKDAYS");
+   else 
+     lcd.print("WEEKENDS");
+   delay(280);
+}
+  
+}
+
+void printTime(int col, int row) {
+  DateTime now = RTC.now();
+  lcd.setCursor(col,row);
+  lcd.print(now.hour());
+  lcd.print(":");
+  if(now.minute() < 10) { lcd.print("0");}
+  lcd.print(now.minute());
+  lcd.print(":");
+  if(now.second() < 10) { lcd.print("0");}
+  lcd.print(now.second());
+}
+
+
+void updateTime() {
+  lcd.clear();
+  DateTime now = RTC.now();
+  lcd.setCursor(4,0);
+  lcd.print(now.hour());
+  lcd.print(":");
+  if(now.minute() < 10) { lcd.print("0");}
+  lcd.print(now.minute());
+  lcd.print(":");
+  if(now.second() < 10) { lcd.print("0");}
+  lcd.print(now.second());
+  lcd.setCursor(1,1);
+  lcd.print(now.month());
+  lcd.print("/");
+  lcd.print(now.day());
+  lcd.print("/");
+  lcd.print(now.year());
+  lcd.print(" ");
+  lcd.print(getDayOfWeek(now.dayOfWeek()));
+   lcd.setCursor(15,0);
+  if(now.hour() > 6 && now.hour() < 19) {
+  lcd.write((uint8_t)0);
+  }
+  else {
+    lcd.write((uint8_t)1);
+  }
+  if(alarming) {
+    digitalWrite(alm, HIGH);
+    chkAlarm(now);
+  }
+  else {
+    digitalWrite(alm, LOW);
+  }
+}
+
+String getDayOfWeek(int dayOfWeekval) {
+  switch(dayOfWeekval) {
+   case 0: return "sun";
+     break;
+   case 1: return "mon";
+     break;
+   case 2: return "tues";
+     break;
+   case 3: return "wed";
+     break;
+   case 4: return "thrs";
+     break;
+   case 5: return "fri";
+     break;
+   case 6: return "sat";
+     break;
+   default: return "WTF";
+     break;
+  }
+
+}
+
+void chkAlarm(DateTime now) {
+  if(now.hour() == alarm[0] && now.minute() == alarm[1] && now.second() <= 1) {
+   if(almType && now.dayOfWeek() != 0 && now.dayOfWeek() != 6) {
+      if(!isPlaying()) { 
+        playRandomSong();
+    }
+   }
+    else if(!almType) {
+     if(now.dayOfWeek() == 0 || now.dayOfWeek() == 6){
+         if(!isPlaying()) {
+          playRandomSong();
+        }
+      }
+    }
+  }
+}
+
+boolean checkHeld(int pin, int loops) {
+  for(int i = 0; i < loops; i++){
+    if(digitalRead(pin) == HIGH) {
+      return false;
+    }
+    delay(100);
+  }
+   return true; 
+}
+
+void startSound() {
+sendMp3Command("PC T 200");
+delay(200);
+sendMp3Command("PC T 99");
+delay(200);
+sendMp3Command("PC T 100");
+delay(200);
+sendMp3Command("PC T");
+}
+
+void playRandomSong() {
+ randomSeed(millis());
+  int  r = random(0,13); 
+ if(r > 12) 
+   return;
+ String out = "PC F ";
+ out += files[r];
+ out += ext;
+ Serial.print("Playing: ");
+ Serial.println(files[r]);
+ sendMp3Command(out);
+  lcd.clear();
+  lcd.setCursor(3,0);
+  lcd.print("NOW PLAYING");
+  lcd.setCursor(5,1);
+  lcd.print(files[r]);
+  delay(5000);
+ }
+ 
+boolean isPlaying() {
+ sendMp3Command("PC Z"); 
+ delay(4);
+  String rcvString = "";
+ if(mp3.available()) {
+   while(mp3.available()) {
+       rcvString += (char)mp3.read();
+   }
+   Serial.println(rcvString);
+ }
+ if(rcvString.indexOf('P') > -1) {
+  return true; 
+ }
+ else {return false;}
+}
+
+void sendMp3Command(String Command) {
+  mp3.print(Command);
+  mp3.print(cr);
+  delay(1);
+}
+
