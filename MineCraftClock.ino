@@ -126,7 +126,7 @@ void loop() {
 void chkInputs() {
  if(digitalRead(snz) == LOW) {
    if(!isPlaying()) {
-     if(checkHeld(snz, 20 )) {
+     if(checkHeld(snz, 20 , true)) {
        playRandomSong();
      }
    }
@@ -135,13 +135,13 @@ void chkInputs() {
    }
  }
 if(digitalRead(dwn) == LOW) {
-  if(checkHeld(dwn,8)) {
+  if(checkHeld(dwn,8,true)) {
     if(alarming){alarming = false;}
     else {alarming = true;}
   }
 }
 if(digitalRead(set) == LOW) {
- if(checkHeld(set,12)) {
+ if(checkHeld(set,12, true)) {
    setAlarmTime();
  }
 }
@@ -297,8 +297,9 @@ void chkAlarm(DateTime now) {
   }
 }
 
-boolean checkHeld(int pin, int loops) {
+boolean checkHeld(int pin, int loops, boolean update) {
   for(int i = 0; i < loops; i++){
+    if(update) { updateTime(); }
     if(digitalRead(pin) == HIGH) {
       return false;
     }
