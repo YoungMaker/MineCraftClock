@@ -140,6 +140,13 @@ if(digitalRead(dwn) == LOW) {
     else {alarming = true;}
   }
 }
+
+if(digitalRead(up) == LOW) {
+  if(checkHeld(up,12,true)) {
+   userSetTime();
+  }
+}
+
 if(digitalRead(set) == LOW) {
  if(checkHeld(set,12, true)) {
    setAlarmTime();
