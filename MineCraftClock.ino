@@ -39,7 +39,7 @@ String files[] =
 "cat"};
 
 byte moon[8] = {
-  B00001,
+  B00000,
   B10001,
   B00011,
   B00011,
@@ -50,12 +50,12 @@ byte moon[8] = {
 
 byte sun[8] = {
   B00000,
-  B10101,
+  B00100,
   B01110,
   B11111,
   B11111,
   B01110,
-  B10101
+  B00100
 };
 
 boolean alarming = false;
@@ -274,7 +274,7 @@ String getDayOfWeek(int dayOfWeekval) {
      break;
    case 6: return "sat";
      break;
-   default: return "WTF";
+   default: return "WTF";//LOL
      break;
   }
 
