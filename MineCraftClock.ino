@@ -210,6 +210,69 @@ void setAlarmTime() {
   setEEPROM();
 }
 
+
+
+void userSetTime() {
+  DateTime now = RTC.now();
+  int uHour =12 , uMin =0 , uSec =0;
+ lcd.clear();
+ lcd.setCursor(0,0);
+ lcd.print("Use up/down to");
+ lcd.setCursor(0,1);
+ lcd.print("set the time");
+ delay(2200);
+ lcd.clear();
+ lcd.setCursor(7,0);
+ lcd.print(uHour);
+ 
+ while(digitalRead(set) != LOW) {
+   if(digitalRead(up) == LOW) {
+    if(uHour < 23){ uHour++;} 
+   }
+   else if(digitalRead(dwn) == LOW) {
+      if(uHour > 0){uHour--;} 
+   }
+   lcd.clear();
+   lcd.setCursor(0,0);
+   lcd.print("Current Hour: ");
+   lcd.print(uHour);
+   printTime(4,1);
+   delay(280);
+}
+ delay(750);
+  while(digitalRead(set) != LOW) {
+   if(digitalRead(up) == LOW) {
+     if(uMin < 59) {uMin++;}
+   }
+   else if(digitalRead(dwn) == LOW) {
+    if(uMin > 0 ) {uMin--;} 
+   }
+   lcd.clear();
+   lcd.setCursor(0,0);
+   lcd.print("Current Minute: ");
+   lcd.print(alarm[1]);
+   printTime(4,1);
+   delay(280);
+  }
+  delay(750);
+  while(digitalRead(set) != LOW) {
+   if(digitalRead(up) == LOW) {
+     if(uSec < 59) {uSec++;}
+   }
+   else if(digitalRead(dwn) == LOW) {
+    if(uSec > 0 ) {uSec--;} 
+   }
+   lcd.clear();
+   lcd.setCursor(0,0);
+   lcd.print("Current Second: ");
+   lcd.print(alarm[1]);
+   printTime(4,1);
+   delay(280);
+  }
+  delay(750);
+  RTC.adjust(DateTime(now.year(), now.month(), now.day(), uHour, uMin, uSec));
+}
+
 void printTime(int col, int row) {
   DateTime now = RTC.now();
   lcd.setCursor(col,row);
