@@ -221,7 +221,7 @@ void setAlarmTime() {
 
 void userSetTime() {
   DateTime now = RTC.now();
-  int uHour =12 , uMin =0 , uSec =0;
+  int uHour = now.hour() , uMin = now.minute() , uSec = now.second();
  lcd.clear();
  lcd.setCursor(0,0);
  lcd.print("Use up/down to");
@@ -240,8 +240,8 @@ void userSetTime() {
       if(uHour > 0){uHour--;} 
    }
    lcd.clear();
-   lcd.setCursor(0,0);
-   lcd.print("Current Hour: ");
+   lcd.setCursor(3,0);
+   lcd.print("T:");
    lcd.print(uHour);
    printTime(4,1);
    delay(280);
@@ -255,9 +255,11 @@ void userSetTime() {
     if(uMin > 0 ) {uMin--;} 
    }
    lcd.clear();
-   lcd.setCursor(0,0);
-   lcd.print("Current Minute: ");
-   lcd.print(alarm[1]);
+   lcd.setCursor(3,0);
+   lcd.print("T:");
+   lcd.print(uHour);
+   lcd.print(":");
+   lcd.print(uMin);
    printTime(4,1);
    delay(280);
   }
@@ -270,9 +272,13 @@ void userSetTime() {
     if(uSec > 0 ) {uSec--;} 
    }
    lcd.clear();
-   lcd.setCursor(0,0);
-   lcd.print("Current Second: ");
-   lcd.print(alarm[1]);
+   lcd.setCursor(3,0);
+    lcd.print("T:");
+    lcd.print(uHour);
+    lcd.print(":");
+    lcd.print(uMin);
+    lcd.print(":");
+   lcd.print(uSec);
    printTime(4,1);
    delay(280);
   }
