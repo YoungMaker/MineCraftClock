@@ -59,6 +59,7 @@ byte sun[8] = {
 };
 
 boolean alarming = false;
+boolean alarmOn = false;
 unsigned int lastSecond;
 unsigned int alarm[] = {6,0};
 boolean almType = true;
@@ -119,6 +120,13 @@ void loop() {
  if(RTC.now().second()-lastSecond >= 1) {
    lastSecond = RTC.now().second();
    updateTime();
+   if(alarming) {
+    if(!isPlaying()) {
+      alarming = false;
+      //sendMp3Command("PC F creeperBoom.mp3");
+      Serial.print("SSSSSSSSS");
+    } 
+   }
  }
  delay(100);
 }
@@ -132,12 +140,13 @@ void chkInputs() {
    }
    else {
     sendMp3Command("PC S"); 
+    alarming = false;
    }
  }
 if(digitalRead(dwn) == LOW) {
   if(checkHeld(dwn,8,true)) {
-    if(alarming){alarming = false;}
-    else {alarming = true;}
+    if(alarmOn){alarmOn = false;}
+    else {alarmOn = true;}
   }
 }
 
@@ -325,7 +334,7 @@ void updateTime() {
   else {
     lcd.write((uint8_t)1);
   }
-  if(alarming) {
+  if(alarmOn) {
     digitalWrite(alm, HIGH);
     chkAlarm(now);
   }
@@ -361,12 +370,14 @@ void chkAlarm(DateTime now) {
    if(almType && now.dayOfWeek() != 0 && now.dayOfWeek() != 6) {
       if(!isPlaying()) { 
         playRandomSong();
+        alarming = true;
     }
    }
     else if(!almType) {
      if(now.dayOfWeek() == 0 || now.dayOfWeek() == 6){
          if(!isPlaying()) {
           playRandomSong();
+          alarming = true;
         }
       }
     }
@@ -419,14 +430,22 @@ boolean isPlaying() {
   String rcvString = "";
  if(mp3.available()) {
    while(mp3.available()) {
-       rcvString += (char)mp3.read();
+     char cChar = (char)mp3.read();
+     if(cChar != '>' && cChar != cr) {
+       rcvString += cChar;
+     }
    }
-   Serial.println(rcvString);
  }
- if(rcvString.indexOf('P') > -1) {
-  return true; 
+ for(int i =0; i<rcvString.length(); i++) {
+  if(rcvString.charAt(i) == 'P')   { 
+   Serial.println(rcvString); 
+   Serial.println(" true");
+   return true; 
+  }
  }
- else {return false;}
+    Serial.println(rcvString); 
+   Serial.println(" false");
+ return false;
 }
 
 void sendMp3Command(String Command) {
