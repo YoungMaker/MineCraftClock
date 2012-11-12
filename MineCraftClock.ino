@@ -436,6 +436,10 @@ boolean isPlaying() {
      }
    }
  }
+ if(rcvString.equals("") || rcvString.equals(" "))  {
+   delay(1);
+     return isPlaying();
+   }
  for(int i =0; i<rcvString.length(); i++) {
   if(rcvString.charAt(i) == 'P')   { 
    Serial.println(rcvString); 
@@ -444,8 +448,8 @@ boolean isPlaying() {
   }
  }
     Serial.println(rcvString); 
-   Serial.println(" false");
- return false;
+     Serial.println(" false");
+   return false;
 }
 
 void sendMp3Command(String Command) {
