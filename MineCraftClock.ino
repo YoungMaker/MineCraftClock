@@ -9,6 +9,8 @@
 #define up A2
 #define dwn A0
 
+#define isplaying 13
+
 #define almHrADDR 512
 #define almMnADDR 513
 #define almTypeADDR 514
@@ -40,22 +42,22 @@ String files[] =
 
 byte moon[8] = {
   B00000,
-  B10001,
-  B00011,
-  B00011,
   B00111,
-  B01110,
-  B11100,
+  B00011,
+  B10011,
+  B00011,
+  B00011,
+  B01111,
 };
 
 byte sun[8] = {
   B00000,
-  B00100,
   B01110,
-  B11111,
-  B11111,
+  B01010,
+  B01010,
   B01110,
-  B00100
+  B00000,
+  B00000
 };
 
 boolean alarming = false;
@@ -78,6 +80,7 @@ void setup() {
   declarePins();
   lastSecond = RTC.now().second();
   updateTime();
+  sendMp3Command("ST V 15");
 }
 
 void recallEEPROM() {
@@ -113,6 +116,7 @@ void declarePins() {
  digitalWrite(set, HIGH);
  digitalWrite(up, HIGH);
  digitalWrite(dwn, HIGH);
+ pinMode(isplaying, INPUT);
 }
 
 void loop() {
@@ -123,8 +127,9 @@ void loop() {
    if(alarming) {
     if(!isPlaying()) {
       alarming = false;
-      //sendMp3Command("PC F creeperBoom.mp3");
-      Serial.print("SSSSSSSSS");
+      sendMp3Command("ST V 0");
+      sendMp3Command("PC F creeperBoom.mp3");
+      sendMp3Command("ST V 15");
     } 
    }
  }
@@ -425,31 +430,12 @@ void playRandomSong() {
  }
  
 boolean isPlaying() {
- sendMp3Command("PC Z"); 
- delay(4);
-  String rcvString = "";
- if(mp3.available()) {
-   while(mp3.available()) {
-     char cChar = (char)mp3.read();
-     if(cChar != '>' && cChar != cr) {
-       rcvString += cChar;
-     }
+   if(digitalRead(isplaying)) {
+     return true;
    }
- }
- if(rcvString.equals("") || rcvString.equals(" "))  {
-   delay(1);
-     return isPlaying();
+   else {
+    return false; 
    }
- for(int i =0; i<rcvString.length(); i++) {
-  if(rcvString.charAt(i) == 'P')   { 
-   Serial.println(rcvString); 
-   Serial.println(" true");
-   return true; 
-  }
- }
-    Serial.println(rcvString); 
-     Serial.println(" false");
-   return false;
 }
 
 void sendMp3Command(String Command) {
